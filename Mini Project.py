@@ -44,8 +44,9 @@ def registreren():
 
         naam = input('Voer jou (voor en achter) naam in: ')
         if naam is '':
-            print(ongeldigeInvoer)
-        elif len(naam) >= 21:
+            print('Ongeldige invoer, type je naam opnieuw')
+            print(naam)
+        elif len(naam) >= 31:
             print('Jij hebt te veel letters ingevoerd, probeer het opnieuw !')
             print(naam)
         fietsNum = input('Voer jou fiets nummer in: ')
