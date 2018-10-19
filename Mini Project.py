@@ -1,6 +1,10 @@
 import os
 import csv
 
+with open ('fietsFile.csv', 'w+',newline='') as myCSVFile:
+    writer = csv.writer(myCSVFile, delimiter=',')
+    writer.writerow(['fietsnum','naam','ov_num','e-mail','ww'])
+
 def startScreen():
     print()
     print('Welcome to NS Fietsen Stalling')
@@ -19,7 +23,7 @@ def startScreen():
     elif choice == '3':
         fietsOphalen()
     elif choice == '4':
-        infoOpvragen()
+        info_checken()
     elif choice == '5':
         stoppen()
     else:
@@ -41,70 +45,102 @@ def stoppen():
 
 
 def stallen():
-    with open ('fietsFile.csv', 'r+') as myCSVFile:
-        persoonelijkInfo = csv.reader(myCSVFile)
-        ovnummer = input('Vul je OV-nummer in: ')
-        for ovNum in persoonelijkInfo:
-            if ovNum in persoonelijkInfo:
-                print('Ga maar je fiets stallen')
-            else:
-                print('Jij moet je eerst registreren')
-                startScreen()
+    gestalldeFietsen = {}
 
+    with open('fietsStalling.txt') as file:
+        for info in file.readlines():
+            ovnummer, fietsNum = info.split(';')
+            gestalldeFietsen[ovnummer] = fietsNum.strip()
+
+    return gestalldeFietsen
+
+def nieuweFietsToevoegen(gestaldeFietsen):
+    lines = []
+
+    for ovNummer, fietsNummer in gestaldeFietsen.items():
+        lines.append('{};{}'.format(ovNummer,fietsNummer.strip()))
+
+    with open('fietsStalling.txt') as file:
+        file.write('\n'.join(lines))
 
 
 def registreren():
-    import csv
 
-    with open ('fietsFile.csv', 'w',newline='') as myCSVFile:
-        persoonelijkInfo = csv.writer(myCSVFile, delimiter=';')
-        persoonelijkInfo.writerow({'fietsnum','naam','ov_num','e-mail','ww'})
+    with open ('fietsFile.csv', 'a',newline='') as myCSVFile:
+        fieldnames = ['fietsnum','naam','ov_num','e-mail','ww']
+        writer = csv.DictWriter(myCSVFile,fieldnames=fieldnames)
 
         naam = input('Voer jou (voor en achter) naam in: ')
 
         if naam is '':
             print('Ongeldige invoer, type je naam opnieuw')
-            print(naam)
 
-        elif len(naam) >= 31:
+        if len(naam) >= 51:
             print('Jij hebt te veel letters ingevoerd, probeer het opnieuw !')
-            print(naam)
 
-        fietsNum = input('Voer jou fiets nummer in: ')
+        fietsNum = input('Voer jou fiets nummer(4 cijfers) in: ')
 
-        if len(fietsNum) < 4 and len(fietsNum)> 4 :
+        if len(fietsNum) != 4:
             print('Jij hebt een verkeerde fiets nummer ingvoerd, probeer het opnieuw !')
-            print(fietsNum)
 
-        ovNum = input('Voer je OV-Nummer in: ')
+        ovNum = input('Voer je OV-Nummer(16 cijfers) in: ')
 
         if len(ovNum) > 16:
             print('Onjuist OV-nummer ingevoerd, probeer het opnieuw !')
 
         e_mail = input('Schrijf je e-mail adres: ')
 
-        for mail in e_mail:
-            mail = '@'
-            if mail not in e_mail:
+        for karakter in e_mail:
+            if '@' not in e_mail:
                 print('Het is ongeldig e-mail, probeer het opnieuw')
-                print(e_mail)
 
-        ww = input('Vul een wacht woord in(bestaat uit 4 tekens): ')
+        wW = input('Vul een wacht woord in(bestaat uit 4 tekens): ')
 
-        if len(ww) < 4 and len(ww) > 4 :
+        if len(wW) != 4:
             print('Onjuist invoer, probeer het opnieuw !')
-            print(ww)
 
-        persoonelijkInfo.writerow({ovNum,naam,fietsNum,e_mail,ww})
+        writer.writerow({'ov_num':ovNum,'naam':naam,'fietsnum':fietsNum,'e-mail':e_mail,'ww':wW})
     #return to start
     startScreen()
 
-def infoLezen():
+def zoek_gegevens():
     gegevens = {}
     with open('fietsFile.csv', 'r+') as myCSVFile:
         for info in myCSVFile.readlines():
-            ov_num, naam = info.split(",")
-            gegevens[ov_num] = naam.strip()
+            fietsnum, naam, ov_num, email, ww = info.split(",")
+            gegevens[ov_num] = [fietsnum, naam, ov_num, email, ww]
 
     return gegevens
 
+
+def info_checken():
+    ov_num = input('geef je ov nummer: ')
+    gegevens = zoek_gegevens()
+    if ov_num in gegevens:
+        print('fiets gevonden')
+        print('naam van de beheerder:',gegevens[ov_num][1])
+        print('Fiets nummer is:',gegevens[ov_num][2])
+
+    else:
+        print("")
+
+    startScreen()
+
+def fietsOphalen():
+    gestalldeFietsen = zoek_gegevens()
+
+    ovNum = input('Wat is je OVnummer: ')
+    if ovNum not in gestalldeFietsen:
+        print('Jou OVnummer {} kan niet gevonden worden'.format(ovNum))
+        return
+
+    wachtwoord = input('Voer jou wachtwoord in: ')
+    juisteWachtwoord = gestalldeFietsen[wachtwoord]
+    if wachtwoord != juisteWachtwoord:
+        print('Jij hebt de verkeerde wachtwoord opgegeven, probeer het opnieuw!')
+        return
+
+    del gestalldeFietsen[zoek_gegevens()][1]
+    print('{} Jij mag je fiets ophalen'.format(gestalldeFietsen[zoek_gegevens()][1]))
+
+startScreen()
